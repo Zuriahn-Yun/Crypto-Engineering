@@ -19,7 +19,7 @@ def request_coin(coin_id,days):
         If days is 7-30 it does it hourly, we might want to try 1
     Output
         A json file with a prices dictionary
-        response["prices][0] = [num1,num2]
+        response["prices"][0] = [num1,num2]
         num1 is a timestap in milliseconds since Jan1,1970
         num2 is a prices in USD, can be set to another currency below
         
@@ -36,9 +36,28 @@ def request_coin(coin_id,days):
         "days": days,
         "x_cg_demo_apkey": os.getenv("COINGGECKO_API_KEY")
     }
-    res = requests.get(url,params=params)
-    #df_prices = pd.DataFrame.from_dict(res["prices"])
-    return res.json()
+    response = requests.get(url,params=params)
+    res = response.json()
+    df = pd.DataFrame(res["prices"], columns=["timestamp", "price"])
+    df["datetime"] = pd.to_datetime(df["timestamp"], unit="ms")
+    df.set_index("datetime", inplace=True)
+    if days == 1:
+        interval = "15T"
+    else:
+        interval = "1h"
+    # Resample and calculate OHLC
+    df_ohlc = df["price"].resample(interval).ohlc()
+
+    # Optional: add volume and market cap to the same index
+    df_vol = pd.DataFrame(res["total_volumes"], columns=["timestamp", "volume"])
+    df_vol["datetime"] = pd.to_datetime(df_vol["timestamp"], unit="ms")
+    df_vol.set_index("datetime", inplace=True)
+    df_vol_resampled = df_vol["volume"].resample(interval).sum()
+
+    # Join volume and OHLC
+    df_final = df_ohlc.join(df_vol_resampled)
+
+    return df_final.reset_index()
 
 def extract_dictionaries(data):
     return data["prices"],data["market_caps"],data["total_volumes"]
@@ -64,4 +83,4 @@ def convert_date_in_prices(data):
         date = lists[1]
         lists[1] = convert_miliseconds_datetime(date)
 # Test extact data
-bitcoin_ten_days = request_coin("bitcoin",days=10)
+bitcoin_ten_days = request_coin("bitcoin",days=1)
