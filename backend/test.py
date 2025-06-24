@@ -9,10 +9,6 @@ import numpy
 bitcoin_test = extract.bitcoin_ten_days
 
 
-# for lists in bitcoin_test["prices"]:
-#     usd = lists[0]
-#     date = extract.convert_miliseconds_datetime(lists[1])
-#     lists[1] = date
 
 prices,market,volume = extract.extract_dictionaries(bitcoin_test)
 

@@ -46,6 +46,7 @@ def convert_miliseconds_datetime(miliseconds):
     """
     seconds = miliseconds / 1000
     return str(datetime.fromtimestamp(seconds))
+
 def convert_date_in_prices(data):
     """
     Input: Pass the prices dictionary
