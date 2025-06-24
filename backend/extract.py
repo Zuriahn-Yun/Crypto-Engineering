@@ -1,6 +1,7 @@
 import os
 import requests
 from datetime import datetime
+import pandas as pd
 
 """
 This script will have functions to extract coin data from any coing
@@ -14,7 +15,8 @@ def request_coin(coin_id,days):
     """
     coin_id - is the coin we want data for as a stirng
     days - the past x many days we want data for
-
+        IF days is 1 it does it per minute data
+        If days is 7-30 it does it hourly, we might want to try 1
     Output
         A json file with a prices dictionary
         response["prices][0] = [num1,num2]
@@ -23,6 +25,8 @@ def request_coin(coin_id,days):
         
         market_caps dictionary - this is total value of the coin in circulation
         total_volumes dictionary - this is the total dollar value of the coin being traded in 24 hours
+        
+        
     """
 
     url = f"https://api.coingecko.com/api/v3/coins/{coin_id}/market_chart"
@@ -33,7 +37,9 @@ def request_coin(coin_id,days):
         "x_cg_demo_apkey": os.getenv("COINGGECKO_API_KEY")
     }
     res = requests.get(url,params=params)
+    #df_prices = pd.DataFrame.from_dict(res["prices"])
     return res.json()
+
 def extract_dictionaries(data):
     return data["prices"],data["market_caps"],data["total_volumes"]
 
