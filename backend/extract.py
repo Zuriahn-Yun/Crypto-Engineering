@@ -25,8 +25,6 @@ def request_coin(coin_id,days):
         
         market_caps dictionary - this is total value of the coin in circulation
         total_volumes dictionary - this is the total dollar value of the coin being traded in 24 hours
-        
-        
     """
 
     url = f"https://api.coingecko.com/api/v3/coins/{coin_id}/market_chart"
@@ -38,26 +36,45 @@ def request_coin(coin_id,days):
     }
     response = requests.get(url,params=params)
     res = response.json()
-    df = pd.DataFrame(res["prices"], columns=["timestamp", "price"])
-    df["datetime"] = pd.to_datetime(df["timestamp"], unit="ms")
-    df.set_index("datetime", inplace=True)
-    if days == 1:
-        interval = "15T"
-    else:
-        interval = "1h"
-    # Resample and calculate OHLC
-    df_ohlc = df["price"].resample(interval).ohlc()
+    # Create base price DataFrame
+    df_price = pd.DataFrame(res["prices"], columns=["timestamp", "price"])
+    df_price["datetime"] = pd.to_datetime(df_price["timestamp"], unit="ms")
 
-    # Optional: add volume and market cap to the same index
+    # Determine resample interval
+    interval = "15T" if params["days"] == 1 else "1h"
+
+    # Use datetime for indexing temporarily to resample
+    df_price.set_index("datetime", inplace=True)
+
+    # Calculate OHLC
+    df_ohlc = df_price["price"].resample(interval).ohlc()
+
+    # Reset index to get datetime column back
+    df_ohlc = df_ohlc.reset_index()
+
+    # Volume
     df_vol = pd.DataFrame(res["total_volumes"], columns=["timestamp", "volume"])
     df_vol["datetime"] = pd.to_datetime(df_vol["timestamp"], unit="ms")
     df_vol.set_index("datetime", inplace=True)
-    df_vol_resampled = df_vol["volume"].resample(interval).sum()
+    df_vol_resampled = df_vol["volume"].resample(interval).sum().reset_index()
 
-    # Join volume and OHLC
-    df_final = df_ohlc.join(df_vol_resampled)
+    # Market Cap
+    df_mc = pd.DataFrame(res["market_caps"], columns=["timestamp", "market_cap"])
+    df_mc["datetime"] = pd.to_datetime(df_mc["timestamp"], unit="ms")
+    df_mc.set_index("datetime", inplace=True)
+    df_mc_resampled = df_mc["market_cap"].resample(interval).mean().reset_index()
 
-    return df_final.reset_index()
+    # Merge everything on datetime
+    df_final = df_ohlc.merge(df_vol_resampled, on="datetime")
+    df_final = df_final.merge(df_mc_resampled, on="datetime")
+
+    # If you want to include raw timestamp (in ms) instead of datetime
+    df_final["timestamp"] = (df_final["datetime"].astype('int64') // 10**6)
+
+    # Reorder columns
+    df_final = df_final[["timestamp", "open", "high", "low", "close", "volume", "market_cap"]]
+    return df_final
+
 
 def extract_dictionaries(data):
     return data["prices"],data["market_caps"],data["total_volumes"]
