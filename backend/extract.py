@@ -136,7 +136,7 @@ bitcoin_ten_days = request_coin("bitcoin",days=1)
 def bitcoin_main():
     bitcoin_df = request_coin("bitcoin",days=1)
     data1 = bitcoin_df.to_dict(orient="records")
-    hieken = heikin_ashi(data1)
+    hieken = heikin_ashi(bitcoin_df)
     data2 = hieken.to_dict(orient="records")
     return {
         "df1": data1,
