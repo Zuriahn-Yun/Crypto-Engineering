@@ -99,5 +99,46 @@ def convert_date_in_prices(data):
         usd = lists[0]
         date = lists[1]
         lists[1] = convert_miliseconds_datetime(date)
+def heikin_ashi(df):
+    """
+    Create the df for Heiken Ashi Candles as a seperate df
+
+    Args:
+        df: df with stock candle data
+
+    Returns:
+        df: df with heiken ashi candle data
+    """
+    ha_df = df.copy()
+    
+    # HA_Close
+    ha_df['ha_close'] = (df['open'] + df['high'] + df['low'] + df['close']) / 4
+    
+    # HA_Open (initialize first row)
+    ha_open = [(df['open'][0] + df['close'][0]) / 2]
+    
+    # Compute remaining HA_Open values
+    for i in range(1, len(df)):
+        ha_open.append((ha_open[i-1] + ha_df['ha_close'][i-1]) / 2)
+    
+    ha_df['ha_open'] = ha_open
+    
+    # HA_High and HA_Low
+    ha_df['ha_high'] = ha_df[['high', 'ha_open', 'ha_close']].max(axis=1)
+    ha_df['ha_low'] = ha_df[['low', 'ha_open', 'ha_close']].min(axis=1)
+    
+    # Return only HA candles (or merge as needed)
+    return ha_df[['ha_open', 'ha_high', 'ha_low', 'ha_close']]
+
 # Test extact data
 bitcoin_ten_days = request_coin("bitcoin",days=1)
+
+def bitcoin_main():
+    bitcoin_df = request_coin("bitcoin",days=1)
+    data1 = bitcoin_df.to_dict(orient="records")
+    hieken = heikin_ashi(data1)
+    data2 = hieken.to_dict(orient="records")
+    return {
+        "df1": data1,
+        "df2": data2
+    }
