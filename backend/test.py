@@ -31,4 +31,3 @@ This exists as a test script file to test backend functions and make sure things
 
 data = extract.bitcoin_main()
 
-print(data)
