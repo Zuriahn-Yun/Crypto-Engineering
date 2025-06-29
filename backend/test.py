@@ -9,27 +9,25 @@ import mplfinance as mpf
 This exists as a test script file to test backend functions and make sure things are working as expected
 """
 
-# This has bitcoin data fro the last 10 days 
-df_plot = extract.bitcoin_main()
+coin_df,heiken_df = extract.coin_data("bitcoin")
 
-print(df_plot)
+from plotly.subplots import make_subplots
+import plotly.graph_objects as go
 
-#print(df_plot)
-# Add datetime and set it as index
-df_plot["datetime"] = pd.to_datetime(df_plot["timestamp"], unit="ms")
-df_plot.set_index("datetime", inplace=True)
+fig = make_subplots(rows=1, cols=1, subplot_titles=("Candles", "Heiken Ashi Candles"))
 
-# Keep only the needed columns in correct order
+fig.add_trace(go.Candlestick(x=coin_df['timestamp'],
+                open=coin_df['open'],
+                high=coin_df['high'],
+                low=coin_df['low'],
+                close=coin_df['close'],name="Candles"))
 
 
-# 15 minute intevals only works if you look at the last 24H, otherwise we only have hourly data 
-mpf.plot(df_plot,type="candle",volume = True,style="yahoo")
+fig.add_trace(go.Candlestick(x=heiken_df['timestamp'],
+                open=heiken_df['ha_open'],
+                high=heiken_df['ha_high'],
+                low=heiken_df['ha_low'],
+                close=heiken_df['ha_close'],name="Heiken Ashi Candles"))
 
-heikin = extract.heikin_ashi(df_plot)
-
-print(heikin)
-
-mpf.plot(heikin,type="candle",style="yahoo")
-
-data = extract.bitcoin_main()
+fig.show()
 

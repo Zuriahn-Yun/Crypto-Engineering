@@ -18,7 +18,7 @@ def get_bitcoin_data():
 
 @app.get("/coin_data")
 def get_coin_data(coin_id: str = Query(..., description="Coin ID from CoinGecko (e.g., 'ethereum', 'cardano')")):
-    """Get candlestick and Heikin Ashi data for any coin"""
+    """Get candlestick and Heikin Ashi data for any coin, query prompts for coin ID"""
     return coin_data(coin_id)
 
 @app.get("/")
@@ -27,8 +27,8 @@ def root():
     return {
         "message": "Cryptocurrency Data API",
         "endpoints": {
-            "/bitcoin_data": "Get Bitcoin data",
-            "/coin_data?coin_id=ethereum": "Get data for any coin",
+            "/bitcoin_data": "Get Bitcoin data from the last 24 hours",
+            "/coin_data?coin_id=ethereum": "Get Any Coin Data from the last 24 hours",
             "/docs": "API documentation"
         }
     }
