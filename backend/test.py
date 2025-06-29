@@ -10,7 +10,9 @@ This exists as a test script file to test backend functions and make sure things
 """
 
 # This has bitcoin data fro the last 10 days 
-df_plot = extract.bitcoin_ten_days
+df_plot = extract.bitcoin_main()
+
+print(df_plot)
 
 #print(df_plot)
 # Add datetime and set it as index

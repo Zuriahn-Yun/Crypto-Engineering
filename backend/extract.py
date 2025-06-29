@@ -130,8 +130,6 @@ def heikin_ashi(df):
     # Return only HA candles (or merge as needed)
     return ha_df[['ha_open', 'ha_high', 'ha_low', 'ha_close']]
 
-# Test extact data
-bitcoin_ten_days = request_coin("bitcoin",days=1)
 
 def bitcoin_main():
     bitcoin_df = request_coin("bitcoin",days=1)
@@ -145,3 +143,9 @@ def bitcoin_main():
 def coin_data(coin_id):
     coin_df = request_coin(coin_id=coin_id,days=1)
     heiken_df = heikin_ashi(coin_df)
+    coin_df = coin_df.to_dict(orient="records")
+    heiken_df = heiken_df.to_dict(orient="records")
+    return{
+        "Candles" : coin_df,
+        "Heiken" : heiken_df
+    }
