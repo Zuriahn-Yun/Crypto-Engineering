@@ -142,3 +142,6 @@ def bitcoin_main():
         "df1": data1,
         "df2": data2
     }
+def coin_data(coin_id):
+    coin_df = request_coin(coin_id=coin_id,days=1)
+    heiken_df = heikin_ashi(coin_df)

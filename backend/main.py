@@ -12,3 +12,7 @@ Testing Steps
 @app.get("/bitcoin_data")
 def bitcoin_data():
     return bitcoin_main()
+
+@app.get("/coin_data")
+def coin_data(coin_id):
+  return 0
