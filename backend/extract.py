@@ -7,8 +7,6 @@ import pandas as pd
 This script will have functions to extract coin data from any coing
 https://docs.coingecko.com/reference/coins-list
 ^ This is the coin list 
-
-
 """
 
 def request_coin(coin_id,days):
@@ -74,11 +72,6 @@ def request_coin(coin_id,days):
     # Reorder columns
     df_final = df_final[["timestamp", "open", "high", "low", "close", "volume", "market_cap"]]
     return df_final
-
-
-def extract_dictionaries(data):
-    return data["prices"],data["market_caps"],data["total_volumes"]
-
 def convert_miliseconds_datetime(miliseconds):
     """
     Input miliseconds as an int
@@ -88,17 +81,6 @@ def convert_miliseconds_datetime(miliseconds):
     """
     seconds = miliseconds / 1000
     return str(datetime.fromtimestamp(seconds))
-
-def convert_date_in_prices(data):
-    """
-    Input: Pass the prices dictionary
-    Output: The prices dictionary with converted date time
-    """
-    # DATA SHOULD BE THE PRICES DICTIONARY
-    for lists in data:
-        usd = lists[0]
-        date = lists[1]
-        lists[1] = convert_miliseconds_datetime(date)
 def heikin_ashi(df):
     """
     Create the df for Heiken Ashi Candles as a seperate df
@@ -129,8 +111,6 @@ def heikin_ashi(df):
     
     # Return only HA candles (or merge as needed)
     return ha_df[['timestamp','ha_open', 'ha_high', 'ha_low', 'ha_close','volume','market_cap']]
-
-
 def bitcoin_main():
     bitcoin_df = request_coin("bitcoin",days=1)
     data1 = bitcoin_df.to_dict(orient="records")

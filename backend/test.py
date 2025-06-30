@@ -10,6 +10,8 @@ This exists as a test script file to test backend functions and make sure things
 """
 
 coin_df,heiken_df = extract.coin_data("bitcoin")
+coin_df['timestamp'] = coin_df['timestamp'].apply(extract.convert_miliseconds_datetime)
+heiken_df['timestamp'] = heiken_df['timestamp'].apply(extract.convert_miliseconds_datetime)
 
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
@@ -20,7 +22,7 @@ fig.add_trace(go.Candlestick(x=coin_df['timestamp'],
                 open=coin_df['open'],
                 high=coin_df['high'],
                 low=coin_df['low'],
-                close=coin_df['close'],name="Candles"))
+                close=coin_df['close'],name="Traditional Candles"))
 
 
 fig.add_trace(go.Candlestick(x=heiken_df['timestamp'],
@@ -28,6 +30,8 @@ fig.add_trace(go.Candlestick(x=heiken_df['timestamp'],
                 high=heiken_df['ha_high'],
                 low=heiken_df['ha_low'],
                 close=heiken_df['ha_close'],name="Heiken Ashi Candles"))
+
+fig.update_layout(title=dict(text="Bitcoin Stock Data From the last Day"))
 
 fig.show()
 
