@@ -8,7 +8,6 @@ import mplfinance as mpf
 """
 This exists as a test script file to test backend functions and make sure things are working as expected
 """
-
 coin_df,heiken_df = extract.coin_data("bitcoin")
 coin_df['timestamp'] = coin_df['timestamp'].apply(extract.convert_miliseconds_datetime)
 heiken_df['timestamp'] = heiken_df['timestamp'].apply(extract.convert_miliseconds_datetime)
