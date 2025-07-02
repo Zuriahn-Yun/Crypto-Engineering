@@ -8,7 +8,9 @@ import mplfinance as mpf
 """
 This exists as a test script file to test backend functions and make sure things are working as expected
 """
-coin_df,heiken_df = extract.coin_data("bitcoin")
+
+coin_id = "solana"
+coin_df,heiken_df = extract.coin_data(coin_id=coin_id)
 coin_df['timestamp'] = coin_df['timestamp'].apply(extract.convert_miliseconds_datetime)
 heiken_df['timestamp'] = heiken_df['timestamp'].apply(extract.convert_miliseconds_datetime)
 
@@ -30,7 +32,6 @@ fig.add_trace(go.Candlestick(x=heiken_df['timestamp'],
                 low=heiken_df['ha_low'],
                 close=heiken_df['ha_close'],name="Heiken Ashi Candles"))
 
-fig.update_layout(title=dict(text="Bitcoin Stock Data From the last Day"))
+fig.update_layout(title=dict(text=coin_id + " Stock Data From the last Day"))
 
-fig.show()
-
+fig.write_html("graph.html",include_plotlyjs='cdn', full_html=True)
