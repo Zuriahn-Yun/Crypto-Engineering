@@ -1,6 +1,6 @@
 # main.py - Fixed FastAPI server
 import uvicorn
-from extract import bitcoin_main, coin_data,convert_miliseconds_datetime
+from extract import bitcoin_main, coin_data,convert_miliseconds_datetime,get_name
 from fastapi import FastAPI, Query
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
@@ -42,8 +42,10 @@ def get_coin_plot(coin_id: str = Query(..., description="Coin ID from CoinGecko 
                         high=heiken_df['ha_high'],
                         low=heiken_df['ha_low'],
                         close=heiken_df['ha_close'],name="Heiken Ashi Candles"))
+        
+        name = get_name(coin_id=coin_id)
 
-        fig.update_layout(title=dict(text=f"{coin_id} Stock Data From the Last Day"))
+        fig.update_layout(title=dict(text=name + " Stock Data From the past 24 Hours, Candles every 15 Minutes"))
 
         html = fig.to_html(include_plotlyjs='cdn',full_html = True)
         

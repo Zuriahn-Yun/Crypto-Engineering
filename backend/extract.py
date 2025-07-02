@@ -35,7 +35,6 @@ def request_coin(coin_id,days):
     }
     response = requests.get(url,params=params)
     res = response.json()
-    print(res)
     # Create base price DataFrame
     df_price = pd.DataFrame(res["prices"], columns=["timestamp", "price"])
     df_price["datetime"] = pd.to_datetime(df_price["timestamp"], unit="ms")
@@ -128,3 +127,13 @@ def coin_data(coin_id):
     #coin_df = coin_df.to_dict(orient="records")
     #heiken_df = heiken_df.to_dict(orient="records")
     return coin_df,heiken_df
+def get_name(coin_id):
+    url = f"https://api.coingecko.com/api/v3/coins/{coin_id}"
+    key = os.getenv("COINGECKO_API_KEY")
+    params = {
+        "x_cg_demo_api": key
+    }
+    response = requests.get(url,params=params)
+    res = response.json()
+    name = res["name"]
+    return str(name)
