@@ -5,9 +5,17 @@ import matplotlib as pyplot
 import numpy
 import pandas as pd
 import mplfinance as mpf
+from extract import coin_data
 """
 This exists as a test script file to test backend functions and make sure things are working as expected
 """
+
+coin_df, heiken_df = coin_data("solana")
+print(coin_df.head())
+print(heiken_df.head())
+
+
+
 
 coin_id = "solana"
 coin_df,heiken_df = extract.coin_data(coin_id=coin_id)

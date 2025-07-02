@@ -21,27 +21,32 @@ def get_bitcoin_data():
 
 @app.get("/coin_data")
 def get_coin_plot(coin_id: str = Query(..., description="Coin ID from CoinGecko (e.g., 'ethereum', 'cardano')")):
-    """Get candlestick and Heikin Ashi data for any coin, query prompts for coin ID"""
-    coin_df,heiken_df = coin_data(coin_id)
-    fig = make_subplots(rows=1, cols=1, subplot_titles=("Candles", "Heiken Ashi Candles"))
+    try:
+        """Get candlestick and Heikin Ashi data for any coin, query prompts for coin ID"""
+        coin_df,heiken_df = coin_data(coin_id)
+        fig = make_subplots(rows=1, cols=1, subplot_titles=("Candles", "Heiken Ashi Candles"))
 
-    fig.add_trace(go.Candlestick(x=coin_df['timestamp'],
-                    open=coin_df['open'],
-                    high=coin_df['high'],
-                    low=coin_df['low'],
-                    close=coin_df['close'],name="Traditional Candles"))
+        fig.add_trace(go.Candlestick(x=coin_df['timestamp'],
+                        open=coin_df['open'],
+                        high=coin_df['high'],
+                        low=coin_df['low'],
+                        close=coin_df['close'],name="Traditional Candles"))
 
-    fig.add_trace(go.Candlestick(x=heiken_df['timestamp'],
-                    open=heiken_df['ha_open'],
-                    high=heiken_df['ha_high'],
-                    low=heiken_df['ha_low'],
-                    close=heiken_df['ha_close'],name="Heiken Ashi Candles"))
+        fig.add_trace(go.Candlestick(x=heiken_df['timestamp'],
+                        open=heiken_df['ha_open'],
+                        high=heiken_df['ha_high'],
+                        low=heiken_df['ha_low'],
+                        close=heiken_df['ha_close'],name="Heiken Ashi Candles"))
 
-    fig.update_layout(title=dict(text=Query + "Stock Data From the last Day"))
+        fig.update_layout(title=dict(text=Query + "Stock Data From the last Day"))
 
-    html = fig.to_html(include_plotlyjs='cdn',full_html = True)
-    
-    return HTMLResponse(html)
+        html = fig.to_html(include_plotlyjs='cdn',full_html = True)
+        
+        return HTMLResponse(html)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return HTMLResponse(content=f"<h3>Internal Error:</h3><pre>{str(e)}</pre>", status_code=500)
 
 
 @app.get("/")
