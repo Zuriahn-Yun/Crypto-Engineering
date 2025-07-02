@@ -26,11 +26,12 @@ def request_coin(coin_id,days):
     """
 
     url = f"https://api.coingecko.com/api/v3/coins/{coin_id}/market_chart"
+    key = os.getenv("COINGECKO_API_KEY")
     params = {
         "vs_currency": "usd",
         "id": coin_id,
         "days": days,
-        "x_cg_demo_apkey": os.getenv("COINGGECKO_API_KEY")
+        "x_cg_demo_api": key
     }
     response = requests.get(url,params=params)
     res = response.json()
