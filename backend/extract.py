@@ -34,6 +34,7 @@ def request_coin(coin_id,days):
     }
     response = requests.get(url,params=params)
     res = response.json()
+    print(res)
     # Create base price DataFrame
     df_price = pd.DataFrame(res["prices"], columns=["timestamp", "price"])
     df_price["datetime"] = pd.to_datetime(df_price["timestamp"], unit="ms")

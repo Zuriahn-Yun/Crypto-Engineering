@@ -43,7 +43,7 @@ def get_coin_plot(coin_id: str = Query(..., description="Coin ID from CoinGecko 
                         low=heiken_df['ha_low'],
                         close=heiken_df['ha_close'],name="Heiken Ashi Candles"))
 
-        fig.update_layout(title=dict(text=Query + "Stock Data From the last Day"))
+        fig.update_layout(title=dict(text=f"{coin_id} Stock Data From the Last Day"))
 
         html = fig.to_html(include_plotlyjs='cdn',full_html = True)
         
