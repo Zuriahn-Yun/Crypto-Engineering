@@ -29,9 +29,8 @@ def request_coin(coin_id,days):
     key = os.getenv("COINGECKO_API_KEY")
     params = {
         "vs_currency": "usd",
-        "id": coin_id,
         "days": days,
-        "x_cg_pro_api_key": key
+        "x_cg_demo_api_key": key
     }
     response = requests.get(url,params=params)
     res = response.json()
@@ -132,7 +131,7 @@ def get_name(coin_id):
     url = f"https://api.coingecko.com/api/v3/coins/{coin_id}"
     key = os.getenv("COINGECKO_API_KEY")
     params = {
-        "x_cg_pro_api_key": key
+        "x_cg_demo_api_key": key
     }
     response = requests.get(url,params=params)
     res = response.json()
