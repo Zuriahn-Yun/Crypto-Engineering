@@ -5,7 +5,6 @@ from fastapi import FastAPI, Query
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 from fastapi.responses import HTMLResponse
-from flask import Flask
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
