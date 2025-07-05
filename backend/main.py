@@ -5,8 +5,19 @@ from fastapi import FastAPI, Query
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 from fastapi.responses import HTMLResponse
+from flask import Flask
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 
 """
 Testing Steps:
@@ -22,7 +33,7 @@ def get_bitcoin_data():
 @app.get("/coin_data")
 def get_coin_plot(coin_id: str = Query(..., description="Coin ID from CoinGecko (e.g., 'ethereum', 'cardano')")):
     try:
-        """Get candlestick and Heikin Ashi data for any coin, query prompts for coin ID"""
+        """Get candlestick and Heikin Ashi data for any coin, query prompts for coin ID"""   
         coin_df,heiken_df = coin_data(coin_id)
         
         coin_df['timestamp'] = coin_df['timestamp'].apply(convert_miliseconds_datetime)
@@ -54,7 +65,7 @@ def get_coin_plot(coin_id: str = Query(..., description="Coin ID from CoinGecko 
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return HTMLResponse(content=f"<h3>Internal Error:</h3><pre>{str(e)}</pre>", status_code=500)
+        return HTMLResponse(content=f"<h3>Internal Error, NOT A VALID COIN ID:</h3><pre>{str(e)}</pre>", status_code=500)
 
 @app.get("/")
 def root():
