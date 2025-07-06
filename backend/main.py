@@ -64,7 +64,7 @@ def get_coin_plot(coin_id: str = Query(..., description="Coin ID from CoinGecko 
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return HTMLResponse(content=f"<h3>Internal Error, NOT A VALID COIN ID:</h3><pre>{str(e)}</pre>", status_code=500)
+        return HTMLResponse(content=f"<center>NOT A VALID COIN ID</center>", status_code=500)
 
 @app.get("/")
 def root():
