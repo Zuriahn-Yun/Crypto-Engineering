@@ -1,19 +1,8 @@
-import extract
-from datetime import datetime
-import collections
-import matplotlib as pyplot
-import numpy
-import pandas as pd
-import mplfinance as mpf
-from extract import coin_data
 import os
-from plotly.subplots import make_subplots
-import plotly.graph_objects as go
 import requests
-
-"""
-This exists as a test script file to test backend functions and make sure things are working as expected
-"""
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+import extract  # your extract module
 
 coin_id = "solana"
 
@@ -23,32 +12,245 @@ def get_name(coin_id):
     params = {
         "x_cg_demo_api": key
     }
-    response = requests.get(url,params=params)
+    response = requests.get(url, params=params)
     res = response.json()
     name = res["name"]
     return str(name)
 
+# Get data
 name = get_name(coin_id=coin_id)
-print(name)
+print(f"Analyzing: {name}")
 
-coin_df,heiken_df = extract.coin_data(coin_id=coin_id)
+coin_df, heiken_df = extract.coin_data(coin_id=coin_id)
+
+# Convert timestamps
 coin_df['timestamp'] = coin_df['timestamp'].apply(extract.convert_miliseconds_datetime)
 heiken_df['timestamp'] = heiken_df['timestamp'].apply(extract.convert_miliseconds_datetime)
 
-fig = make_subplots(rows=1, cols=1, subplot_titles=("Candles", "Heiken Ashi Candles"))
+# Calculate technical indicators
+def calculate_sma(data, window):
+    return data.rolling(window=window).mean()
 
-fig.add_trace(go.Candlestick(x=coin_df['timestamp'],
-                open=coin_df['open'],
-                high=coin_df['high'],
-                low=coin_df['low'],
-                close=coin_df['close'],name="Traditional Candles"))
+def calculate_ema(data, window):
+    return data.ewm(span=window).mean()
 
-fig.add_trace(go.Candlestick(x=heiken_df['timestamp'],
-                open=heiken_df['ha_open'],
-                high=heiken_df['ha_high'],
-                low=heiken_df['ha_low'],
-                close=heiken_df['ha_close'],name="Heiken Ashi Candles"))
-print(name)
-fig.update_layout(title=dict(text=name + " Stock Data From the past 24 Hours, Candles every 15 Minutes"))
+def calculate_rsi(data, window=14):
+    delta = data.diff()
+    gain = (delta.where(delta > 0, 0)).rolling(window=window).mean()
+    loss = (-delta.where(delta < 0, 0)).rolling(window=window).mean()
+    rs = gain / loss
+    return 100 - (100 / (1 + rs))
 
-fig.write_html("graph.html",include_plotlyjs='cdn', full_html=True)
+def calculate_bollinger_bands(data, window=20, num_std=2):
+    sma = data.rolling(window=window).mean()
+    std = data.rolling(window=window).std()
+    upper = sma + (std * num_std)
+    lower = sma - (std * num_std)
+    return upper, sma, lower
+
+def calculate_macd(data, fast=12, slow=26, signal=9):
+    ema_fast = data.ewm(span=fast).mean()
+    ema_slow = data.ewm(span=slow).mean()
+    macd_line = ema_fast - ema_slow
+    signal_line = macd_line.ewm(span=signal).mean()
+    histogram = macd_line - signal_line
+    return macd_line, signal_line, histogram
+
+# Calculate indicators
+print("Calculating technical indicators...")
+coin_df['sma_20'] = calculate_sma(coin_df['close'], 20)
+coin_df['sma_50'] = calculate_sma(coin_df['close'], 50)
+coin_df['ema_12'] = calculate_ema(coin_df['close'], 12)
+coin_df['ema_26'] = calculate_ema(coin_df['close'], 26)
+coin_df['rsi'] = calculate_rsi(coin_df['close'])
+
+bb_upper, bb_middle, bb_lower = calculate_bollinger_bands(coin_df['close'])
+coin_df['bb_upper'] = bb_upper
+coin_df['bb_middle'] = bb_middle
+coin_df['bb_lower'] = bb_lower
+
+macd_line, signal_line, histogram = calculate_macd(coin_df['close'])
+coin_df['macd'] = macd_line
+coin_df['macd_signal'] = signal_line
+coin_df['macd_histogram'] = histogram
+
+# Calculate volume moving average
+coin_df['volume_sma'] = calculate_sma(coin_df['volume'], 20)
+
+# Create subplots
+fig = make_subplots(
+    rows=4, cols=2,
+    subplot_titles=(
+        "Price Chart with Technical Indicators", "Heikin Ashi Candles",
+        "Volume Analysis", "RSI (Relative Strength Index)",
+        "MACD Indicator", "Price vs Moving Averages"
+    ),
+    specs=[
+        [{"secondary_y": False}, {"secondary_y": False}],
+        [{"secondary_y": True}, {"secondary_y": False}],
+        [{"secondary_y": False}, {"secondary_y": False}],
+        [{"secondary_y": False}, {"secondary_y": False}]
+    ],
+    vertical_spacing=0.08,
+    horizontal_spacing=0.1,
+    row_heights=[0.4, 0.25, 0.25, 0.1]
+)
+
+print("Creating visualizations...")
+
+# 1. Main candlestick chart with Bollinger Bands
+fig.add_trace(go.Candlestick(
+    x=coin_df['timestamp'],
+    open=coin_df['open'],
+    high=coin_df['high'],
+    low=coin_df['low'],
+    close=coin_df['close'],
+    name="Price",
+    increasing_line_color='#00ff88',
+    decreasing_line_color='#ff4444'
+), row=1, col=1)
+
+# Bollinger Bands
+fig.add_trace(go.Scatter(
+    x=coin_df['timestamp'], y=coin_df['bb_upper'],
+    mode='lines', name='BB Upper', line=dict(color='rgba(128,128,128,0.3)'),
+    showlegend=False
+), row=1, col=1)
+
+fig.add_trace(go.Scatter(
+    x=coin_df['timestamp'], y=coin_df['bb_lower'],
+    mode='lines', name='BB Lower', line=dict(color='rgba(128,128,128,0.3)'),
+    fill='tonexty', fillcolor='rgba(128,128,128,0.1)',
+    showlegend=False
+), row=1, col=1)
+
+fig.add_trace(go.Scatter(
+    x=coin_df['timestamp'], y=coin_df['bb_middle'],
+    mode='lines', name='BB Middle', line=dict(color='orange', width=1)
+), row=1, col=1)
+
+# 2. Heikin Ashi candles
+fig.add_trace(go.Candlestick(
+    x=heiken_df['timestamp'],
+    open=heiken_df['ha_open'],
+    high=heiken_df['ha_high'],
+    low=heiken_df['ha_low'],
+    close=heiken_df['ha_close'],
+    name="Heikin Ashi",
+    increasing_line_color='#00cc66',
+    decreasing_line_color='#cc3333'
+), row=1, col=2)
+
+# 3. Volume analysis
+colors = ['green' if close >= open else 'red' 
+         for close, open in zip(coin_df['close'], coin_df['open'])]
+
+fig.add_trace(go.Bar(
+    x=coin_df['timestamp'], y=coin_df['volume'],
+    name='Volume', marker_color=colors, opacity=0.7
+), row=2, col=1)
+
+fig.add_trace(go.Scatter(
+    x=coin_df['timestamp'], y=coin_df['volume_sma'],
+    mode='lines', name='Volume SMA', line=dict(color='purple', width=2)
+), row=2, col=1)
+
+# 4. RSI
+fig.add_trace(go.Scatter(
+    x=coin_df['timestamp'], y=coin_df['rsi'],
+    mode='lines', name='RSI', line=dict(color='blue', width=2)
+), row=2, col=2)
+
+# RSI overbought/oversold lines
+fig.add_hline(y=70, line_dash="dash", line_color="red", opacity=0.5, row=2, col=2)
+fig.add_hline(y=30, line_dash="dash", line_color="green", opacity=0.5, row=2, col=2)
+fig.add_hline(y=50, line_dash="dot", line_color="gray", opacity=0.3, row=2, col=2)
+
+# 5. MACD
+fig.add_trace(go.Scatter(
+    x=coin_df['timestamp'], y=coin_df['macd'],
+    mode='lines', name='MACD', line=dict(color='blue', width=2)
+), row=3, col=1)
+
+fig.add_trace(go.Scatter(
+    x=coin_df['timestamp'], y=coin_df['macd_signal'],
+    mode='lines', name='Signal', line=dict(color='red', width=2)
+), row=3, col=1)
+
+# MACD histogram
+histogram_colors = ['green' if val >= 0 else 'red' for val in coin_df['macd_histogram']]
+fig.add_trace(go.Bar(
+    x=coin_df['timestamp'], y=coin_df['macd_histogram'],
+    name='MACD Histogram', marker_color=histogram_colors, opacity=0.6
+), row=3, col=1)
+
+# 6. Moving averages comparison
+fig.add_trace(go.Scatter(
+    x=coin_df['timestamp'], y=coin_df['close'],
+    mode='lines', name='Price', line=dict(color='black', width=3)
+), row=3, col=2)
+
+fig.add_trace(go.Scatter(
+    x=coin_df['timestamp'], y=coin_df['sma_20'],
+    mode='lines', name='SMA 20', line=dict(color='blue', width=2)
+), row=3, col=2)
+
+fig.add_trace(go.Scatter(
+    x=coin_df['timestamp'], y=coin_df['sma_50'],
+    mode='lines', name='SMA 50', line=dict(color='red', width=2)
+), row=3, col=2)
+
+fig.add_trace(go.Scatter(
+    x=coin_df['timestamp'], y=coin_df['ema_12'],
+    mode='lines', name='EMA 12', line=dict(color='green', width=1, dash='dash')
+), row=3, col=2)
+
+# Calculate current stats
+current_price = coin_df['close'].iloc[-1]
+price_change = ((current_price - coin_df['close'].iloc[0]) / coin_df['close'].iloc[0]) * 100
+volume_24h = coin_df['volume'].sum()
+current_rsi = coin_df['rsi'].iloc[-1] if not coin_df['rsi'].isna().all() else 0
+
+print(f"Current Price: ${current_price:.4f}")
+print(f"24h Change: {price_change:+.2f}%")
+print(f"Current RSI: {current_rsi:.1f}")
+print(f"24h Volume: {volume_24h:,.0f}")
+
+# Update layout with enhanced styling
+fig.update_layout(
+    title=dict(
+        text=f"{name} - Comprehensive Technical Analysis<br>" +
+             f"<span style='font-size:14px'>Current: ${current_price:.4f} | " +
+             f"24h Change: {price_change:+.2f}% | " +
+             f"RSI: {current_rsi:.1f} | " +
+             f"24h Volume: {volume_24h:,.0f}</span>",
+        x=0.5,
+        font=dict(size=20)
+    ),
+    height=1200,
+    showlegend=True,
+    plot_bgcolor='rgba(240,240,240,0.8)',
+    paper_bgcolor='white',
+    font=dict(size=10),
+    margin=dict(t=120, b=50, l=50, r=50)
+)
+
+# Update y-axis labels
+fig.update_yaxes(title_text="Price ($)", row=1, col=1)
+fig.update_yaxes(title_text="Price ($)", row=1, col=2)
+fig.update_yaxes(title_text="Volume", row=2, col=1)
+fig.update_yaxes(title_text="RSI", row=2, col=2, range=[0, 100])
+fig.update_yaxes(title_text="MACD", row=3, col=1)
+fig.update_yaxes(title_text="Price ($)", row=3, col=2)
+
+# Update x-axis labels
+fig.update_xaxes(title_text="Time", row=3, col=1)
+fig.update_xaxes(title_text="Time", row=3, col=2)
+
+# Remove x-axis rangeslider for cleaner look
+fig.update_layout(xaxis=dict(rangeslider=dict(visible=False)))
+fig.update_layout(xaxis2=dict(rangeslider=dict(visible=False)))
+
+print("Saving chart to graph.html...")
+fig.write_html("graph.html", include_plotlyjs='cdn', full_html=True)
+print("Chart saved successfully! Open graph.html to view the analysis.")
